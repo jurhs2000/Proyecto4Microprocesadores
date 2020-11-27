@@ -18,14 +18,21 @@ leibniz(double *C,int numElements)
 {
 
     int i = blockDim.x * blockIdx.x + threadIdx.x;
+    double a = 1;
+    //denominador
+    double n;
     if (i < numElements)
     {
-        double a = powf(-1.0, i-1);
-        double n = (2*i)-1;
+        a = A[i]*(pow(-1.f, i + 1)/(2*i - 1));
+        B[i] = 4.f/a;
         C[i] = a/n;
 		printf("El resultado es: %20.18f\n ",C[i]);
 
     }
+    """
+    idea: hacer que el numerador de la serie se guarde en el vector A como 4^2*i+1
+    y en el vector B guardar la parte del denominador y en el C hacer un for A / B
+    """
 
 }
 
