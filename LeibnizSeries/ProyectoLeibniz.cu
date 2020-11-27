@@ -14,14 +14,14 @@
 #include <stdio.h>
 #include <cuda_runtime.h>
 __global__ void
-leibniz(float *C,int numElements)
+leibniz(double *C,int numElements)
 {
 
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     if (i < numElements)
     {
-        float a = powf(-1.0, i-1);
-        float n = (2*i)-1;
+        double a = powf(-1.0, i-1);
+        double n = (2*i)-1;
         C[i] = a/n;
 		printf("El resultado es: %20.18f\n ",C[i]);
 
@@ -39,11 +39,11 @@ int main(void)
 
     // Print the vector length to be used, and compute its size
     int numElements = 5000;
-    size_t size = numElements * sizeof(float);
+    size_t size = numElements * sizeof(double);
     printf("[Vector addition of %d elements]\n", numElements);
 
     // Allocate the host output vector C
-    float *h_C = (float *)malloc(size);
+    double *h_C = (double *)malloc(size);
 
     // Verify that allocations succeeded
     if ( h_C == NULL)
@@ -55,7 +55,7 @@ int main(void)
 
 
     // Allocate the device output vector C
-    float *d_C = NULL;
+    double *d_C = NULL;
     err = cudaMalloc((void **)&d_C, size);
 
     if (err != cudaSuccess)
@@ -91,7 +91,7 @@ int main(void)
     }
 
     // Verify that the result vector is correct
-	float suma = 0;
+	double suma = 0;
     for (int i =0; i < numElements; ++i)
     {
 		suma++;
