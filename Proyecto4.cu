@@ -3,7 +3,7 @@
  *     Alejandra Gudiel 19232
  *     Oscar Saravia 19322
  *     Julio Herrera 19402
- *     Andres Emilio Quinto 18288
+ *     Andres Emilio Quinto 18288 
  * ---------------------------------------
  * UNIVERSIDAD DEL VALLE DE GUATEMALA
  * CC3056 - Programacion de Microprocesadores - Sección 10
@@ -30,12 +30,11 @@ nilakantha(double *A, int numElements)
 
     if (id < numElements)
     {
-        int sign = ((i%2) * 2) - 1; // Da -1 para numeros pares y 1 para numeros impares
+        int sign = (((id + 1)%2) * 2) - 1; // Da -1 para numeros pares y 1 para numeros impares
         double step = (id + 1.0) * 2.0; // Ya que i empieza en cero, se le suma 1. Indica el primer numero del denomiador de la serie
         double denominator = step * (step+1.0) * (step+2.0); // Calcula el denominador de la serie
-        double value = 4.0 / denominator;
+        double value = sign * (4.0 / denominator);
 		A[id] = value;
-		
     }
 }
 
@@ -43,13 +42,16 @@ nilakantha(double *A, int numElements)
  *
 */
 __global__ void
-leibniz(double *A, int numElements)
+leibniz(double *B, int numElements)
 {
     int id = blockDim.x * blockIdx.x + threadIdx.x;
 
     if (id < numElements)
     {
-        // colocar serie
+        int sign = (((id + 1)%2) * 2) - 1; // Da -1 para numeros pares y 1 para numeros impares
+        double denom = 2*id + 1;
+        double resultadito = ((4.0 * sign) / denom);
+        B[id] = resultadito;
     }
 }
 
@@ -132,13 +134,6 @@ int main(void) {
     cudaEventRecord(start[0], stream1);
     nilakantha<<<blocksPerGrid, threadsPerBlock, 0, stream1>>>(d_A, numElements);
     cudaEventRecord(stop[0], stream1);
-    /* Este catch de error no sé si lo realiza sobre la llamada a kernel ya que la ejecución es asincrónica
-    err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-        fprintf(stderr, "Fallo al realizar la opeeracion kernel 'serie' (error code %s)!\n", cudaGetErrorString(err));
-        exit(EXIT_FAILURE);
-    }*/
 
     // Copiando el resultado del vector A en la memoria en el device
     // al vector A en la memoria del host, de forma asincrónica
@@ -154,7 +149,6 @@ int main(void) {
     cudaEventRecord(start[1], stream2);
     leibniz<<<blocksPerGrid, threadsPerBlock, 0, stream2>>>(d_B, numElements);
     cudaEventRecord(stop[1], stream2);
-    // Colocar el mismo catch de error que en la llamada a nilakantha, si funciona
 
     // Copiando el resultado del vector B en la memoria en el device
     // al vector B en la memoria del host, de forma asincrónica
@@ -168,18 +162,18 @@ int main(void) {
 
     // Obteniendo tiempos
     float milliseconds1 = 0, milliseconds2 = 0;
-    cudaEventSynchronize(stop[0])
+    cudaEventSynchronize(stop[0]);
     cudaEventElapsedTime(&milliseconds1, start[0], stop[0]);
-    cudaEventSynchronize(stop[0])
+    cudaEventSynchronize(stop[0]);
     cudaEventElapsedTime(&milliseconds2, start[1], stop[1]);
     printf("Tiempo de ejecución de la serie Nilakantha: %f ms\n", milliseconds1);
     printf("Tiempo de ejecución de la serie Leibniz: %f ms\n", milliseconds2);
 
     // Destruyendo eventos
-    cudaEventDestroy(start[0])
-    cudaEventDestroy(stop[0])
-    cudaEventDestroy(start[1])
-    cudaEventDestroy(stop[2])
+    cudaEventDestroy(start[0]);
+    cudaEventDestroy(stop[0]);
+    cudaEventDestroy(start[1]);
+    cudaEventDestroy(stop[1]);
 
     // Destruyendo ambos streams
     //cudaDeviceSynchronize(); No sé si es necesario esperar al device para destruir los streams
@@ -207,10 +201,16 @@ int main(void) {
         pi += h_A[i];
 	    //printf("Valor : %.16f\n", h_A[i]);
     }
-    printf("Valor aproximado de pi: %.16f\n", pi);
+    printf("Valor aproximado de pi Nilakantha: %.16f\n", pi);
     
     // Sumando los resultados para la serie Leibniz
-
+    double piL = 0.0;
+    for (int i = 0; i < numElements; i++)
+    {
+        piL += h_B[i];
+    }
+    printf("Valor aproximado de pi Leibniz: %.16f\n", piL);
+    
     // Liberando memoria en el host
     free(h_A);
     free(h_B);
